@@ -60,8 +60,12 @@ export async function whitenBackground(canvas, quality = "fast") {
     const mask = result.categoryMask.getAsUint8Array();
     for (let i = 0; i < mask.length; i++) alpha[i] = mask[i] === 0 ? 0 : 1;
   } else {
-    // confidence_masks[1] = "foreground" (person) confidence, 0..1.
-    const conf = result.confidenceMasks[1].getAsFloat32Array();
+    // The general selfie_segmenter model outputs a single confidence
+    // channel (foreground/person probability). Some segmentation models
+    // instead output [background, foreground] as two channels — take the
+    // last channel either way so this holds for both shapes.
+    const masks = result.confidenceMasks;
+    const conf = masks[masks.length - 1].getAsFloat32Array();
     alpha.set(conf);
   }
 
