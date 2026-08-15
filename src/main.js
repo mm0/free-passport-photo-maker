@@ -5,7 +5,7 @@ import { detectFace, cropToFace, drawCrop, centerCropBox } from "./faceCrop.js";
 import { whitenBackground } from "./bgRemoval.js";
 import { buildSheet } from "./sheetLayout.js";
 import { checkCompliance } from "./compliance.js";
-import { downloadSheet, printSheet } from "./exportPrint.js";
+import { downloadSheet } from "./exportPrint.js";
 
 const $ = (id) => document.getElementById(id);
 
@@ -355,9 +355,6 @@ function enterExportStep() {
 
 $("btn-download").addEventListener("click", () => {
   downloadSheet(state.sheetCanvas, state.sheet.sheetWIn, state.sheet.sheetHIn, state.sheet.dpi);
-});
-$("btn-print").addEventListener("click", () => {
-  printSheet(state.sheetCanvas, state.sheet.sheetWIn, state.sheet.sheetHIn);
 });
 $("btn-export-back").addEventListener("click", () => goTo("sheet"));
 $("btn-start-over").addEventListener("click", () => {
