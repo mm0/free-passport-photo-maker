@@ -28,7 +28,7 @@ Pushing to `main` runs `.github/workflows/deploy.yml`, which builds and
 publishes `dist/` to GitHub Pages via the official Pages Actions. In the repo
 settings, set **Settings → Pages → Source: GitHub Actions**.
 
-The app is served from a project-site subpath (`https://<user>.github.io/passport-photo-web/`);
+The app is served from a project-site subpath (`https://mm0.github.io/free-passport-photo-maker/`);
 `vite.config.js`'s `base` must match the repo name if you rename it.
 
 ## Models
