@@ -536,6 +536,14 @@ main#app {
   font-size: 0.8rem;
 }
 
+.tech-note {
+  max-width: 26rem;
+  margin: 1.25rem auto 0;
+  font-size: 0.74rem;
+  color: var(--text-muted);
+  opacity: 0.85;
+}
+
 @media (max-width: 420px) {
   .source-cards {
     grid-template-columns: 1fr;
