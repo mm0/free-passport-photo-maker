@@ -3,12 +3,22 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="Free passport photo maker: upload or take a photo, auto-crop it to official 2x2&quot; head-size/eye-line proportions, remove the background, and download a print-ready 4x6&quot; sheet of 6 photos — all in your browser, no upload, no account."
+    />
     <title>Passport Photo Sheet</title>
     <link rel="stylesheet" href="/styles/main.css" />
   </head>
   <body>
     <header class="app-header">
       <h1>Passport Photo Sheet</h1>
+      <p class="intro-text">
+        Turn any photo into a print-ready passport photo sheet — <strong>free</strong>, no account, no upload.
+        Take a photo or upload one, and this auto-crops it to standard 2x2" head-size/eye-line proportions,
+        can swap in a plain white background, and lays out a 4x6" sheet of 6 photos ready to print at home or
+        at a photo kiosk (see the tip on the download step for a cheap print option).
+      </p>
       <p class="privacy-note">🔒 Your photo never leaves your device — everything runs locally in your browser.</p>
     </header>
 
@@ -115,7 +125,7 @@
           <label>Gap (in) <input type="number" id="opt-gap" min="0" max="4" step="0.05" /></label>
         </div>
         <label class="checkbox-label">
-          <input type="checkbox" id="opt-guides" checked />
+          <input type="checkbox" id="opt-guides" />
           Draw cut-line guides
         </label>
         <p class="error-text" id="sheet-error" hidden></p>

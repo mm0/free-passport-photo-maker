@@ -68,6 +68,18 @@ body {
   color: transparent;
 }
 
+.intro-text {
+  color: var(--text-muted);
+  font-size: 0.95rem;
+  max-width: 34rem;
+  margin: 0 auto 0.75rem;
+  line-height: 1.55;
+}
+
+.intro-text strong {
+  color: var(--text);
+}
+
 .privacy-note {
   color: var(--text-muted);
   font-size: 0.85rem;

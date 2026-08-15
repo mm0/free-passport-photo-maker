@@ -28,7 +28,7 @@ export const state = {
     rows: null,
     marginIn: 0.0,
     gapIn: 0.0,
-    guides: true,
+    guides: false,
   },
 
   sheetCanvas: null,
