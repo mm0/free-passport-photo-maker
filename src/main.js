@@ -6,6 +6,7 @@ import { whitenBackground, isSegmenterReady, loadSegmenter } from "./bgRemoval.j
 import { buildSheet } from "./sheetLayout.js";
 import { checkCompliance } from "./compliance.js";
 import { downloadSheet } from "./exportPrint.js";
+import { renderDonateQr, getAddress } from "./donate.js";
 
 const $ = (id) => document.getElementById(id);
 
@@ -476,6 +477,49 @@ $("btn-start-over").addEventListener("click", () => {
   $("file-input").value = "";
   $("bg-toggle").checked = false;
   goTo("source");
+});
+
+// ---- Donate panel -----------------------------------------------------
+
+let donateRendered = false;
+let currentCoin = "btc";
+
+function renderDonateCoin(coin) {
+  currentCoin = coin;
+  document
+    .querySelectorAll("#donate-coins .donate-coin-btn")
+    .forEach((b) => b.classList.toggle("active", b.dataset.coin === coin));
+  renderDonateQr(coin, $("donate-qr"));
+  $("donate-address").textContent = getAddress(coin);
+}
+
+$("donate-panel").addEventListener("toggle", () => {
+  // Defer QR rendering until the panel is actually opened — no point
+  // paying for it (or shipping the library's work) if nobody looks.
+  if ($("donate-panel").open && !donateRendered) {
+    donateRendered = true;
+    renderDonateCoin(currentCoin);
+  }
+});
+
+$("donate-coins").addEventListener("click", (e) => {
+  const btn = e.target.closest(".donate-coin-btn");
+  if (!btn) return;
+  renderDonateCoin(btn.dataset.coin);
+});
+
+$("donate-copy").addEventListener("click", async () => {
+  const address = getAddress(currentCoin);
+  try {
+    await navigator.clipboard.writeText(address);
+    const btn = $("donate-copy");
+    const original = btn.textContent;
+    btn.textContent = "Copied!";
+    setTimeout(() => (btn.textContent = original), 1500);
+  } catch {
+    // Clipboard API can be unavailable (permissions, insecure context) —
+    // the address is already visible and selectable as plain text either way.
+  }
 });
 
 // ---- init -----------------------------------------------------------------
