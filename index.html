@@ -1,0 +1,163 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Passport Photo Sheet</title>
+    <link rel="stylesheet" href="/styles/main.css" />
+  </head>
+  <body>
+    <header class="app-header">
+      <h1>Passport Photo Sheet</h1>
+      <p class="privacy-note">🔒 Your photo never leaves your device — everything runs locally in your browser.</p>
+    </header>
+
+    <main id="app">
+      <!-- Step 0: settings, shown once, persists -->
+      <section class="settings-bar" id="settings-bar">
+        <div class="settings-group">
+          <span class="settings-label">Detection quality</span>
+          <div class="segmented" id="quality-toggle" role="radiogroup" aria-label="Model quality">
+            <button type="button" class="segmented-btn active" data-quality="fast">Fast</button>
+            <button type="button" class="segmented-btn" data-quality="accurate">Accurate (larger download)</button>
+          </div>
+        </div>
+        <label class="checkbox-label">
+          <input type="checkbox" id="show-boxes-toggle" />
+          Show detection boxes
+        </label>
+      </section>
+
+      <!-- Step 1: source selection -->
+      <section class="step" id="step-source">
+        <h2>1. Get a photo</h2>
+        <div class="source-cards">
+          <button class="source-card" id="btn-take-photo">
+            <span class="source-icon">📷</span>
+            <span>Take Photo</span>
+          </button>
+          <label class="source-card" id="drop-zone" for="file-input">
+            <span class="source-icon">🖼️</span>
+            <span>Upload Photo</span>
+            <span class="source-hint">or drag & drop</span>
+          </label>
+          <input type="file" id="file-input" accept="image/*" hidden />
+        </div>
+        <p class="error-text" id="source-error" hidden></p>
+      </section>
+
+      <!-- Step 2: camera capture -->
+      <section class="step" id="step-capture" hidden>
+        <h2>Take a photo</h2>
+        <div class="camera-wrap">
+          <video id="camera-video" autoplay playsinline muted></video>
+        </div>
+        <div class="btn-row">
+          <button class="btn" id="btn-switch-camera">🔄 Switch camera</button>
+          <button class="btn btn-primary" id="btn-shutter">📸 Capture</button>
+          <button class="btn btn-ghost" id="btn-cancel-camera">Cancel</button>
+        </div>
+        <p class="error-text" id="camera-error" hidden></p>
+      </section>
+
+      <!-- Step 3: auto-crop + adjust -->
+      <section class="step" id="step-crop" hidden>
+        <h2>2. Crop to face</h2>
+        <p class="step-hint">Drag the box to adjust. We aim for standard passport head-size/eye-line proportions.</p>
+        <div class="canvas-wrap">
+          <canvas id="crop-canvas"></canvas>
+        </div>
+        <label class="slider-label">
+          Crop size
+          <input type="range" id="crop-size-slider" min="0" max="100" value="50" />
+        </label>
+        <p class="warning-text" id="crop-warning" hidden></p>
+        <p class="loading-text" id="crop-loading">Detecting face…</p>
+        <div class="btn-row">
+          <button class="btn btn-ghost" id="btn-crop-back">Back</button>
+          <button class="btn btn-primary" id="btn-crop-next">Next</button>
+        </div>
+      </section>
+
+      <!-- Step 4: background -->
+      <section class="step" id="step-background" hidden>
+        <h2>3. Background</h2>
+        <label class="checkbox-label">
+          <input type="checkbox" id="bg-toggle" />
+          Remove background (replace with white)
+        </label>
+        <div class="canvas-wrap canvas-wrap-small">
+          <canvas id="bg-canvas"></canvas>
+        </div>
+        <p class="loading-text" id="bg-loading" hidden>Removing background…</p>
+        <div class="btn-row">
+          <button class="btn btn-ghost" id="btn-bg-back">Back</button>
+          <button class="btn btn-primary" id="btn-bg-next">Next</button>
+        </div>
+      </section>
+
+      <!-- Step 5: sheet settings -->
+      <section class="step" id="step-sheet" hidden>
+        <h2>4. Sheet settings</h2>
+        <div class="form-grid">
+          <label>DPI <input type="number" id="opt-dpi" min="72" max="600" step="1" /></label>
+          <label>Sheet width (in) <input type="number" id="opt-sheet-w" min="1" max="24" step="0.1" /></label>
+          <label>Sheet height (in) <input type="number" id="opt-sheet-h" min="1" max="24" step="0.1" /></label>
+          <label>Photo size (in) <input type="number" id="opt-photo-size" min="0.5" max="8" step="0.1" /></label>
+          <label>Margin (in) <input type="number" id="opt-margin" min="0" max="4" step="0.05" /></label>
+          <label>Gap (in) <input type="number" id="opt-gap" min="0" max="4" step="0.05" /></label>
+        </div>
+        <label class="checkbox-label">
+          <input type="checkbox" id="opt-guides" checked />
+          Draw cut-line guides
+        </label>
+        <p class="error-text" id="sheet-error" hidden></p>
+        <div class="btn-row">
+          <button class="btn btn-ghost" id="btn-sheet-back">Back</button>
+          <button class="btn btn-primary" id="btn-sheet-next">Preview sheet</button>
+        </div>
+      </section>
+
+      <!-- Step 6: final preview + export -->
+      <section class="step" id="step-export" hidden>
+        <h2>5. Download & print</h2>
+        <div class="canvas-wrap">
+          <canvas id="sheet-canvas"></canvas>
+        </div>
+        <p class="sheet-meta" id="sheet-meta"></p>
+        <div class="btn-row">
+          <button class="btn" id="btn-download">⬇️ Download PNG</button>
+          <button class="btn" id="btn-print">🖨️ Print</button>
+        </div>
+        <p class="fine-print">
+          For guaranteed physical size, download and print at <strong>100% / actual size</strong>
+          (not "fit to page").
+        </p>
+
+        <details class="compliance-panel" id="compliance-panel">
+          <summary>Compliance check (informational only)</summary>
+          <ul id="compliance-list"></ul>
+          <p class="fine-print">
+            This is a heuristic check, not an official verdict. For US passports, confirm with
+            <a href="https://travel.state.gov/photos" target="_blank" rel="noopener">travel.state.gov/photos</a>
+            before submitting.
+          </p>
+        </details>
+
+        <div class="btn-row">
+          <button class="btn btn-ghost" id="btn-export-back">Back</button>
+          <button class="btn btn-ghost" id="btn-start-over">Start over</button>
+        </div>
+      </section>
+    </main>
+
+    <footer class="app-footer">
+      <p>
+        Heuristic-based, not an official verdict — verify against
+        <a href="https://travel.state.gov/photos" target="_blank" rel="noopener">travel.state.gov/photos</a>.
+      </p>
+    </footer>
+
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>
