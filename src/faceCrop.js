@@ -98,7 +98,7 @@ export async function detectFace(imgOrCanvas, quality = "fast") {
       // but real hair extends a bit further up — small heuristic margin,
       // much smaller than the box-multiplier version needs since this is
       // anchored to real geometry, not extrapolated from eyebrow height.
-      hairlineY: top.y - 0.12 * boxH,
+      hairlineY: top.y - 0.22 * boxH,
       chinY: chin.y,
       eyeY: (leftEye.y + rightEye.y) / 2,
       cx: (leftEdge.x + rightEdge.x) / 2,
@@ -120,7 +120,11 @@ export async function detectFace(imgOrCanvas, quality = "fast") {
     y,
     w,
     h,
-    hairlineY: y - 0.35 * h,
+    // Was -0.35h — real-world testing showed hair getting clipped by
+    // default (fine once dragged up manually), meaning this margin was too
+    // tight for typical hair volume. Erring toward more headroom is the
+    // safer default: too much is a one-drag fix, too little crops hair off.
+    hairlineY: y - 0.5 * h,
     chinY: y + h + 0.2 * h,
     eyeY: y + 0.42 * h,
     cx: x + w / 2,

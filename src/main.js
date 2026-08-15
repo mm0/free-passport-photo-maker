@@ -38,6 +38,12 @@ $("quality-toggle").addEventListener("click", (e) => {
   document.querySelectorAll("#quality-toggle .segmented-btn").forEach((b) => b.classList.remove("active"));
   btn.classList.add("active");
   setState({ modelQuality: btn.dataset.quality });
+  // Switching quality while already on a model-dependent step used to just
+  // sit there with stale results (or a stale failure) until the user
+  // navigated away and back — re-run detection/removal for the current
+  // step immediately instead.
+  if (state.step === "crop") enterCropStep();
+  if (state.step === "background" && state.bgRemovalEnabled) renderBackgroundPreview();
 });
 
 $("show-boxes-toggle").addEventListener("change", (e) => {
@@ -106,6 +112,18 @@ const cropCtx = cropCanvas.getContext("2d");
 let cropPreviewScale = 1; // preview px per source px
 let dragOffset = null;
 
+async function runFaceDetection(quality, img, loadingText) {
+  if (!isFaceModelReady(quality)) {
+    loadingText.textContent =
+      quality === "accurate"
+        ? "Downloading face model (first run only, ~4MB)…"
+        : "Downloading face model (first run only, ~0.5MB)…";
+    await loadFaceModel(quality);
+  }
+  loadingText.textContent = "Detecting face…";
+  return detectFace(img, quality);
+}
+
 async function enterCropStep() {
   const loadingText = $("crop-loading-text");
   $("crop-loading").hidden = false;
@@ -121,29 +139,48 @@ async function enterCropStep() {
   cropCanvas.height = Math.round(imgH * cropPreviewScale);
 
   let face = null;
+  let usedFallback = false;
+  let bothCrashed = false;
   try {
-    if (!isFaceModelReady(state.modelQuality)) {
-      loadingText.textContent =
-        state.modelQuality === "accurate"
-          ? "Downloading face model (first run only, ~4MB)…"
-          : "Downloading face model (first run only, ~0.5MB)…";
-      await loadFaceModel(state.modelQuality);
-    }
-    loadingText.textContent = "Detecting face…";
-    face = await detectFace(img, state.modelQuality);
-    loadingText.textContent = "Cropping…";
+    face = await runFaceDetection(state.modelQuality, img, loadingText);
   } catch (err) {
-    console.error("Face detection failed:", err);
+    console.error(`Face detection (${state.modelQuality}) crashed:`, err);
   }
+  // Retry with the other quality whenever the first attempt came back
+  // empty — whether it cleanly found no face, or crashed. A crash isn't
+  // necessarily model-specific (WebAssembly/WebGL issues have shown up on
+  // both), so it's still worth trying the other one rather than assuming.
+  if (!face) {
+    const otherQuality = state.modelQuality === "accurate" ? "fast" : "accurate";
+    loadingText.textContent = `Retrying with ${otherQuality === "accurate" ? "Accurate" : "Fast"}…`;
+    try {
+      face = await runFaceDetection(otherQuality, img, loadingText);
+      usedFallback = !!face;
+    } catch (err) {
+      console.error(`Face detection (${otherQuality}) crashed:`, err);
+      bothCrashed = true;
+    }
+  }
+  loadingText.textContent = "Cropping…";
   $("crop-loading").hidden = true;
   setState({ lastFaceBox: face });
 
   let box, warning;
   if (face) {
     ({ box, warning } = cropToFace(face, imgW, imgH));
+    if (usedFallback) {
+      warning = warning
+        ? `Switched detection quality to find a face. ${warning}`
+        : "Switched detection quality to find a face.";
+    }
   } else {
     box = centerCropBox(imgW, imgH);
-    warning = "No face detected — using a plain center crop. Drag the box below to adjust manually.";
+    warning = bothCrashed
+      ? "Face detection isn't working in this browser — using a plain center crop. This can happen with " +
+        "strict privacy/fingerprinting protection (e.g. Brave Shields, or similar settings in other " +
+        "browsers) interfering with WebAssembly image processing; try turning that off for this site, " +
+        "or use a different browser. You can still drag the box below to crop manually."
+      : "No face detected — using a plain center crop. Drag the box below to adjust manually.";
   }
   setState({ cropBox: box, cropWarning: warning });
   if (warning) {
@@ -275,6 +312,18 @@ async function enterBackgroundStep() {
   await renderBackgroundPreview();
 }
 
+async function runBackgroundRemoval(quality, src, loadingText) {
+  if (!isSegmenterReady(quality)) {
+    loadingText.textContent =
+      quality === "accurate"
+        ? "Downloading background model (first run only, ~16MB)…"
+        : "Downloading background model (first run only, ~0.3MB)…";
+    await loadSegmenter(quality);
+  }
+  loadingText.textContent = "Removing background…";
+  return whitenBackground(src, quality);
+}
+
 function renderBackgroundPreview() {
   bgRenderPromise = doRenderBackgroundPreview();
   return bgRenderPromise;
@@ -288,23 +337,43 @@ async function doRenderBackgroundPreview() {
 
   if (state.bgRemovalEnabled) {
     const loadingText = $("bg-loading-text");
+    hideError("bg-error");
     $("bg-loading").hidden = false;
     $("btn-bg-next").disabled = true;
     $("bg-toggle").disabled = true;
+    let result;
     try {
-      if (!isSegmenterReady(state.modelQuality)) {
-        loadingText.textContent =
-          state.modelQuality === "accurate"
-            ? "Downloading background model (first run only, ~3MB)…"
-            : "Downloading background model (first run only, ~0.3MB)…";
-        await loadSegmenter(state.modelQuality);
+      result = await runBackgroundRemoval(state.modelQuality, src, loadingText);
+    } catch (err) {
+      console.error(`Background removal (${state.modelQuality}) crashed:`, err);
+    }
+    // Same reasoning as face detection: a crash isn't necessarily specific
+    // to whichever model was selected (WASM/WebGL issues have shown up on
+    // both fast and accurate), so try the other one before giving up.
+    if (!result) {
+      const otherQuality = state.modelQuality === "accurate" ? "fast" : "accurate";
+      loadingText.textContent = `Retrying with ${otherQuality === "accurate" ? "Accurate" : "Fast"}…`;
+      try {
+        result = await runBackgroundRemoval(otherQuality, src, loadingText);
+        if (result) {
+          showError("bg-error", `The ${state.modelQuality} background model isn't working — used ${otherQuality} instead.`);
+        }
+      } catch (err) {
+        console.error(`Background removal (${otherQuality}) crashed too:`, err);
       }
-      loadingText.textContent = "Removing background…";
-      const result = await whitenBackground(src, state.modelQuality);
+    }
+
+    if (result) {
       setState({ finalPhotoCanvas: result });
       canvas.getContext("2d").drawImage(result, 0, 0);
-    } catch (err) {
-      console.error("Background removal failed:", err);
+    } else {
+      showError(
+        "bg-error",
+        "Background removal isn't working in this browser — continuing without it. This can happen with " +
+          "strict privacy/fingerprinting protection (e.g. Brave Shields, or similar settings in other " +
+          "browsers) interfering with WebAssembly image processing; try turning that off for this site, " +
+          "or use a different browser."
+      );
       setState({ finalPhotoCanvas: src, bgRemovalEnabled: false });
       $("bg-toggle").checked = false;
       canvas.getContext("2d").drawImage(src, 0, 0);
