@@ -30,7 +30,7 @@
 
       <!-- Step 1: source selection -->
       <section class="step" id="step-source">
-        <h2>1. Get a photo</h2>
+        <h2><span class="step-num">1</span>Get a photo</h2>
         <div class="source-cards">
           <button class="source-card" id="btn-take-photo">
             <span class="source-icon">📷</span>
@@ -62,7 +62,7 @@
 
       <!-- Step 3: auto-crop + adjust -->
       <section class="step" id="step-crop" hidden>
-        <h2>2. Crop to face</h2>
+        <h2><span class="step-num">2</span>Crop to face</h2>
         <p class="step-hint">Drag the box to adjust. We aim for standard passport head-size/eye-line proportions.</p>
         <div class="canvas-wrap">
           <canvas id="crop-canvas"></canvas>
@@ -72,7 +72,10 @@
           <input type="range" id="crop-size-slider" min="0" max="100" value="50" />
         </label>
         <p class="warning-text" id="crop-warning" hidden></p>
-        <p class="loading-text" id="crop-loading">Detecting face…</p>
+        <p class="loading-text" id="crop-loading">
+          <span class="spinner" aria-hidden="true"></span>
+          <span id="crop-loading-text">Detecting face…</span>
+        </p>
         <div class="btn-row">
           <button class="btn btn-ghost" id="btn-crop-back">Back</button>
           <button class="btn btn-primary" id="btn-crop-next">Next</button>
@@ -81,7 +84,7 @@
 
       <!-- Step 4: background -->
       <section class="step" id="step-background" hidden>
-        <h2>3. Background</h2>
+        <h2><span class="step-num">3</span>Background</h2>
         <label class="checkbox-label">
           <input type="checkbox" id="bg-toggle" />
           Remove background (replace with white)
@@ -89,7 +92,10 @@
         <div class="canvas-wrap canvas-wrap-small">
           <canvas id="bg-canvas"></canvas>
         </div>
-        <p class="loading-text" id="bg-loading" hidden>Removing background…</p>
+        <p class="loading-text" id="bg-loading" hidden>
+          <span class="spinner" aria-hidden="true"></span>
+          <span id="bg-loading-text">Removing background…</span>
+        </p>
         <div class="btn-row">
           <button class="btn btn-ghost" id="btn-bg-back">Back</button>
           <button class="btn btn-primary" id="btn-bg-next">Next</button>
@@ -98,7 +104,7 @@
 
       <!-- Step 5: sheet settings -->
       <section class="step" id="step-sheet" hidden>
-        <h2>4. Sheet settings</h2>
+        <h2><span class="step-num">4</span>Sheet settings</h2>
         <div class="form-grid">
           <label>DPI <input type="number" id="opt-dpi" min="72" max="600" step="1" /></label>
           <label>Sheet width (in) <input type="number" id="opt-sheet-w" min="1" max="24" step="0.1" /></label>
@@ -120,7 +126,7 @@
 
       <!-- Step 6: final preview + export -->
       <section class="step" id="step-export" hidden>
-        <h2>5. Download</h2>
+        <h2><span class="step-num">5</span>Download</h2>
         <div class="canvas-wrap">
           <canvas id="sheet-canvas"></canvas>
         </div>
@@ -131,6 +137,11 @@
         <p class="fine-print">
           When printing, use <strong>100% / actual size</strong> (not "fit to page") for accurate
           physical dimensions.
+        </p>
+        <p class="tip-text">
+          💡 Tip: save this image and upload it to <strong>Walgreens Photo</strong> (or a similar
+          photo-printing service) as a 4x6" print — it typically costs around <strong>$0.25</strong>,
+          much cheaper than a dedicated passport-photo counter.
         </p>
 
         <details class="compliance-panel" id="compliance-panel">

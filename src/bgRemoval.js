@@ -21,6 +21,16 @@ async function getFileset() {
   return fileset;
 }
 
+/** True once the segmentation model for `quality` is loaded and cached. */
+export function isSegmenterReady(quality) {
+  return quality === "accurate" ? !!accurateSegmenter : !!fastSegmenter;
+}
+
+/** Explicitly load (and cache) the model for `quality`, without segmenting yet. */
+export async function loadSegmenter(quality) {
+  return getSegmenter(quality);
+}
+
 async function getSegmenter(quality) {
   if (quality === "accurate") {
     if (accurateSegmenter) return accurateSegmenter;

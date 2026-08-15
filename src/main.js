@@ -1,8 +1,8 @@
 import { state, setState } from "./state.js";
 import { wireUpload } from "./upload.js";
 import { startCamera, stopCamera, toggleFacingMode, captureFrame, isCameraSupported } from "./camera.js";
-import { detectFace, cropToFace, drawCrop, centerCropBox } from "./faceCrop.js";
-import { whitenBackground } from "./bgRemoval.js";
+import { detectFace, cropToFace, drawCrop, centerCropBox, isFaceModelReady, loadFaceModel } from "./faceCrop.js";
+import { whitenBackground, isSegmenterReady, loadSegmenter } from "./bgRemoval.js";
 import { buildSheet } from "./sheetLayout.js";
 import { checkCompliance } from "./compliance.js";
 import { downloadSheet } from "./exportPrint.js";
@@ -107,6 +107,7 @@ let cropPreviewScale = 1; // preview px per source px
 let dragOffset = null;
 
 async function enterCropStep() {
+  const loadingText = $("crop-loading-text");
   $("crop-loading").hidden = false;
   $("crop-warning").hidden = true;
 
@@ -121,7 +122,16 @@ async function enterCropStep() {
 
   let face = null;
   try {
+    if (!isFaceModelReady(state.modelQuality)) {
+      loadingText.textContent =
+        state.modelQuality === "accurate"
+          ? "Downloading face model (first run only, ~4MB)…"
+          : "Downloading face model (first run only, ~0.5MB)…";
+      await loadFaceModel(state.modelQuality);
+    }
+    loadingText.textContent = "Detecting face…";
     face = await detectFace(img, state.modelQuality);
+    loadingText.textContent = "Cropping…";
   } catch (err) {
     console.error("Face detection failed:", err);
   }
@@ -253,20 +263,43 @@ $("btn-crop-next").addEventListener("click", async () => {
 
 // ---- Step: background ---------------------------------------------------
 
+// Tracks the in-flight renderBackgroundPreview() call, if any, so "Next"
+// can wait for it instead of letting the user race past it — clicking Next
+// while segmentation was still running used to silently ship the
+// pre-removal (still-cropped, not-whitened) canvas to the sheet, since
+// finalPhotoCanvas hadn't been updated yet by the time the sheet was built.
+let bgRenderPromise = null;
+
 async function enterBackgroundStep() {
   $("bg-toggle").checked = state.bgRemovalEnabled;
   await renderBackgroundPreview();
 }
 
-async function renderBackgroundPreview() {
+function renderBackgroundPreview() {
+  bgRenderPromise = doRenderBackgroundPreview();
+  return bgRenderPromise;
+}
+
+async function doRenderBackgroundPreview() {
   const canvas = $("bg-canvas");
   const src = state.croppedCanvas;
   canvas.width = src.width;
   canvas.height = src.height;
 
   if (state.bgRemovalEnabled) {
+    const loadingText = $("bg-loading-text");
     $("bg-loading").hidden = false;
+    $("btn-bg-next").disabled = true;
+    $("bg-toggle").disabled = true;
     try {
+      if (!isSegmenterReady(state.modelQuality)) {
+        loadingText.textContent =
+          state.modelQuality === "accurate"
+            ? "Downloading background model (first run only, ~3MB)…"
+            : "Downloading background model (first run only, ~0.3MB)…";
+        await loadSegmenter(state.modelQuality);
+      }
+      loadingText.textContent = "Removing background…";
       const result = await whitenBackground(src, state.modelQuality);
       setState({ finalPhotoCanvas: result });
       canvas.getContext("2d").drawImage(result, 0, 0);
@@ -277,6 +310,8 @@ async function renderBackgroundPreview() {
       canvas.getContext("2d").drawImage(src, 0, 0);
     }
     $("bg-loading").hidden = true;
+    $("btn-bg-next").disabled = false;
+    $("bg-toggle").disabled = false;
   } else {
     setState({ finalPhotoCanvas: src });
     canvas.getContext("2d").drawImage(src, 0, 0);

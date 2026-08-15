@@ -1,34 +1,39 @@
 :root {
-  --bg: #f7f7f9;
+  --bg: #f4f5f9;
   --surface: #ffffff;
-  --text: #1a1a1e;
+  --text: #17181c;
   --text-muted: #63636b;
-  --border: #e0e0e6;
+  --border: #e3e4ea;
   --accent: #2f6fed;
+  --accent-2: #7c5cff;
   --accent-text: #ffffff;
   --danger: #c4392b;
   --danger-bg: #fdeceb;
   --warning: #a5680a;
   --warning-bg: #fdf3e0;
   --success: #1f8a4c;
-  --radius: 12px;
-  --shadow: 0 1px 3px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.06);
+  --success-bg: #eaf7f0;
+  --radius: 14px;
+  --shadow: 0 1px 3px rgba(20, 20, 30, 0.06), 0 6px 20px rgba(20, 20, 30, 0.05);
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --bg: #16161a;
-    --surface: #1f1f24;
-    --text: #eeeef0;
-    --text-muted: #9a9aa2;
-    --border: #303038;
-    --accent: #5b8def;
+    --bg: #131316;
+    --surface: #1c1d22;
+    --text: #f0f0f2;
+    --text-muted: #9a9aa4;
+    --border: #2d2e35;
+    --accent: #6a93f5;
+    --accent-2: #9c85ff;
     --accent-text: #0b1220;
     --danger: #ff8a80;
     --danger-bg: #3a1e1c;
     --warning: #ffcf7d;
     --warning-bg: #3a2f14;
     --success: #6fd39a;
+    --success-bg: #163526;
+    --shadow: 0 1px 3px rgba(0, 0, 0, 0.35), 0 6px 20px rgba(0, 0, 0, 0.3);
   }
 }
 
@@ -38,20 +43,29 @@
 
 body {
   margin: 0;
-  background: var(--bg);
+  background:
+    radial-gradient(60vw 40vh at 50% -10%, color-mix(in srgb, var(--accent) 10%, transparent), transparent 70%),
+    var(--bg);
   color: var(--text);
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
 }
 
 .app-header {
   text-align: center;
-  padding: 2rem 1rem 1rem;
+  padding: 2.75rem 1rem 1.25rem;
 }
 
 .app-header h1 {
-  margin: 0 0 0.4rem;
-  font-size: 1.6rem;
+  margin: 0 0 0.5rem;
+  font-size: 1.85rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  background: linear-gradient(135deg, var(--text), var(--accent) 130%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
 }
 
 .privacy-note {
@@ -130,14 +144,43 @@ main#app {
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius);
-  padding: 1.25rem;
+  padding: 1.4rem;
   margin-bottom: 1.25rem;
   box-shadow: var(--shadow);
+  animation: step-in 0.25s ease;
+}
+
+@keyframes step-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
 }
 
 .step h2 {
-  margin-top: 0;
+  margin: 0 0 0.9rem;
   font-size: 1.15rem;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.step-num {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.6rem;
+  height: 1.6rem;
+  flex: none;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--accent), var(--accent-2));
+  color: #fff;
+  font-size: 0.85rem;
+  font-weight: 700;
 }
 
 .step-hint {
@@ -158,24 +201,31 @@ main#app {
   align-items: center;
   justify-content: center;
   gap: 0.4rem;
-  padding: 1.75rem 1rem;
+  padding: 1.9rem 1rem;
   border: 2px dashed var(--border);
   border-radius: var(--radius);
   background: var(--bg);
   cursor: pointer;
   font-size: 0.95rem;
+  font-weight: 600;
   color: var(--text);
-  transition: border-color 0.15s, background 0.15s;
+  transition: border-color 0.15s, background 0.15s, transform 0.15s;
 }
 
-.source-card:hover,
-.source-card.drag-active {
+.source-card:hover {
   border-color: var(--accent);
   background: color-mix(in srgb, var(--accent) 8%, var(--bg));
+  transform: translateY(-2px);
+}
+
+.source-card.drag-active {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 12%, var(--bg));
+  border-style: solid;
 }
 
 .source-icon {
-  font-size: 2rem;
+  font-size: 2.1rem;
 }
 
 .source-hint {
@@ -264,6 +314,27 @@ main#app {
   color: var(--text-muted);
   font-size: 0.85rem;
   text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.spinner {
+  display: inline-block;
+  width: 0.9rem;
+  height: 0.9rem;
+  border-radius: 50%;
+  border: 2px solid var(--border);
+  border-top-color: var(--accent);
+  animation: spin 0.7s linear infinite;
+  flex: none;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .slider-label {
@@ -311,6 +382,19 @@ main#app {
 .fine-print {
   color: var(--text-muted);
   font-size: 0.78rem;
+}
+
+.tip-text {
+  color: var(--success);
+  background: var(--success-bg);
+  border-radius: 8px;
+  padding: 0.65rem 0.85rem;
+  font-size: 0.82rem;
+  margin-top: 0.6rem;
+}
+
+.tip-text strong {
+  color: inherit;
 }
 
 .compliance-panel {

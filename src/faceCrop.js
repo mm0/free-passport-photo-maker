@@ -32,6 +32,17 @@ async function getFaceDetector() {
   return faceDetector;
 }
 
+/** True once the model for `quality` is loaded and cached — lets the UI show
+ * an accurate "downloading model" vs. "detecting" progress message. */
+export function isFaceModelReady(quality) {
+  return quality === "accurate" ? !!faceLandmarker : !!faceDetector;
+}
+
+/** Explicitly load (and cache) the model for `quality`, without detecting yet. */
+export async function loadFaceModel(quality) {
+  return quality === "accurate" ? getFaceLandmarker() : getFaceDetector();
+}
+
 async function getFaceLandmarker() {
   if (faceLandmarker) return faceLandmarker;
   const vision = await getFileset();
