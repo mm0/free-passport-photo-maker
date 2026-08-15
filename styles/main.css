@@ -320,6 +320,14 @@ main#app {
   gap: 0.5rem;
 }
 
+/* `display: flex` above has the same specificity as the browser's default
+ * `[hidden] { display: none }` rule, and author CSS wins ties — without
+ * this, the hidden attribute was silently ignored and the loading text
+ * (e.g. "Removing background…") showed up before it was actually true. */
+.loading-text[hidden] {
+  display: none;
+}
+
 .spinner {
   display: inline-block;
   width: 0.9rem;
